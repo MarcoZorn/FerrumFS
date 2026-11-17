@@ -7,11 +7,11 @@ from rich.text import Text
 BARS = " ▁▂▃▄▅▆▇█"
 
 
-def sparkline(sig: list[float], width: int = 100) -> str:
+def sparkline(sig: list[float], width: int = 56) -> str:
+    """Point-sampled (not averaged): averaging would smear Manchester to mush."""
     if not sig:
         return ""
-    step = max(1, len(sig) // width)
-    pts = [sum(sig[i:i + step]) / step for i in range(0, len(sig) - step + 1, step)][-width:]
+    pts = sig[::max(1, len(sig) // width)][-width:]
     lo, hi = min(pts), max(pts)
     span = (hi - lo) or 1.0
     return "".join(BARS[int((p - lo) / span * (len(BARS) - 1))] for p in pts)
@@ -19,7 +19,7 @@ def sparkline(sig: list[float], width: int = 100) -> str:
 
 def packet_map(asm) -> Text:
     total = asm.total or 0
-    t = Text()
+    t = Text(overflow="fold")  # wrap long maps instead of eliding
     for i in range(total):
         t.append("■", style="green" if i in asm.chunks else "grey35")
     return t
@@ -31,5 +31,6 @@ def render(sig: list[float], snr: float, bps: float, asm=None, title: str = "Fer
     grid.add_row("SNR", f"{snr:5.1f} dB")
     grid.add_row("goodput", f"{bps:7.1f} bit/s")
     if asm is not None and asm.total:
-        grid.add_row("packets", Text(f"{len(asm.chunks)}/{asm.total}  ") + packet_map(asm))
+        grid.add_row("packets", f"{len(asm.chunks)}/{asm.total}")
+        grid.add_row("", packet_map(asm))
     return Panel(grid, title=title)

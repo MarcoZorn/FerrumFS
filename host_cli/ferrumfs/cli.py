@@ -71,7 +71,7 @@ def simulate(file: Path, fs: float = FS, bitrate: int = BPS, noise: float = 1.0,
         csv.close()
     air = sent / fs
     sig = project(samples, ch.sps)
-    con.print(render(sig[: int(ch.sps * 120)], snr_db(sig), len(data) * 8 / air, asm, f"sim: {file.name}"))
+    con.print(render(sig[int(ch.sps * 40):int(ch.sps * 54)], snr_db(sig), len(data) * 8 / air, asm, f"sim: {file.name}"))
     if r := asm.result():
         con.print(f"[green]ok[/] {r[0]} {len(r[1])} B, sha256 verified, {air:.1f}s on air, decode {time.time() - t0:.1f}s")
     else:
@@ -111,7 +111,7 @@ def receive(port: str = PORT, fs: float = FS, bitrate: int = BPS, out: Path = Pa
                 asm.add(seq, chunk)
             sig = project(buf, sps)
             got = sum(len(c) for c in asm.chunks.values()) * 8
-            live.update(render(sig, snr_db(sig), got / (time.time() - t0), asm, f"rx {port}"))
+            live.update(render(sig[-int(sps * 14):], snr_db(sig), got / (time.time() - t0), asm, f"rx {port}"))
             if eof:
                 r = asm.result()
                 break
@@ -136,7 +136,7 @@ def scope(port: str = PORT, fs: float = FS, bitrate: int = BPS):
             if len(buf) % int(fs / 8) == 0 and len(buf) > sps * 8:
                 buf = buf[-int(sps * 100):]
                 sig = project(buf, sps)
-                live.update(render(sig, snr_db(sig), 0, None, f"scope {port}"))
+                live.update(render(sig[-int(sps * 14):], snr_db(sig), 0, None, f"scope {port}"))
 
 
 @app.command()
