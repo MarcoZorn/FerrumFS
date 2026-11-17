@@ -1,6 +1,10 @@
 # FerrumFS
 
+[![ci](https://github.com/MarcoZorn/FerrumFS/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcoZorn/FerrumFS/actions/workflows/ci.yml)
+
 **A filesystem whose storage medium is a magnetic field in free space.**
+
+![TX coil on the desk, RX pod underneath, field lines through the wood](docs/img/assembly.png)
 
 A coil on one side of a table pulses a file into the air as Manchester-coded
 magnetic flux. A magnetometer on the other side, through 2 cm of solid wood,
@@ -18,6 +22,14 @@ file.
 ```
 
 ## How it works
+
+![one frame: raw 3-axis field, PCA projection, recovered clock and bits](docs/img/signal.svg)
+
+*One simulated frame. Top: raw field on the X, Y and Z axes, riding on the
+earth's field, drift and hum. Middle: the detrended signal projected onto its
+principal axis. Bottom: the clock the decoder locks onto each bit (blue ticks)
+and the decoded bits. The preamble `AA` = `10101010` is followed by the sync
+word `2D D4`. Generated from the real code by `docs/make_figures.py`.*
 
 | Layer | Where | What |
 |---|---|---|
@@ -67,10 +79,15 @@ source ── GND (common with ESP32)
 
 ### Enclosures
 
-`hardware/*.scad` are parametric OpenSCAD files. The TX pod holds the coil
+| TX coil pod | RX sensor pod |
+|---|---|
+| ![](docs/img/tx_coil_mount.png) | ![](docs/img/rx_sensor_pod.png) |
+
+`hardware/*.scad` are parametric OpenSCAD files (STLs are attached to each
+[release](https://github.com/MarcoZorn/FerrumFS/releases) and built by CI). The TX pod holds the coil
 vertically with the core flush against a 0.8 mm floor. The RX pod centres the
 sensor on the coil axis. Put one pod on top of the table and one directly
-underneath it.
+underneath it. `hardware/assembly.scad` is the scene in the image at the top.
 
 ## Usage
 
@@ -97,6 +114,14 @@ mkdir -p /tmp/ferrum && ferrum mount /tmp/ferrum --port /dev/ttyUSB0
 cp note.txt /tmp/ferrum/                               # → goes out through the coil
 ```
 
+![ferrum simulate](docs/img/simulate.svg)
+
+![ferrum receive, mid-flight: grey squares are frames still waiting for the next loop](docs/img/receive.svg)
+
+**Replay.** `--port` also accepts a CSV file. You can record a session (or
+`ferrum simulate --dump cap.csv`) and run `ferrum receive --port cap.csv` to
+debug the decoder offline, through the exact path used for live hardware.
+
 QMC5883L profile: `--fs 200 --bitrate 25`. Hall profile: the defaults
 (`--fs 4000 --bitrate 500`).
 
@@ -108,12 +133,32 @@ per-symbol jitter. With the defaults (8 µT signal, 1 µT/axis noise) about 37
 of 40 frames decode on the first pass, and the loop buffer collects the rest
 on later passes.
 
+## Repo map
+
+```
+host_cli/ferrumfs/
+  encoder.py     framing, RS, CRC, Manchester
+  decoder.py     PCA projection, DLL clock recovery, assembler
+  channel.py     noisy channel simulator
+  cli.py         ferrum simulate | send | receive | scope | mount
+  visualizer.py  terminal scope
+  fuse_mount.py  FUSE filesystem
+host_cli/test_roundtrip.py   FEC, channel, CLI replay tests
+firmware_tx/ firmware_rx/    PlatformIO (ESP32, Arduino)
+hardware/                    OpenSCAD pods + assembly scene
+docs/make_figures.py         regenerates docs/img/*.svg
+```
+
 ## Limits
 
 - 4 KiB per file: `SEQ` is one byte. Widen it, or add fountain codes, to go bigger.
 - Throughput is tens to hundreds of bit/s. This is a weird storage medium, not a modem.
 - The field falls off as 1/r³. Expect a few cm with a bolt-core coil at 5 V,
   and more with a ferrite rod, more turns or 12 V.
+
+- The hardware hasn't been built yet. Everything above the coil is tested
+  against the simulator, and the firmware compiles in CI. Real-world range and
+  bitrate still need to be measured.
 
 ## License
 
