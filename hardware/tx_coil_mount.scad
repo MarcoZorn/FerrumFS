@@ -14,7 +14,7 @@ $fn = 96;
 od = coil_od + 2 * wall;
 h  = coil_h + floor_t + 4;
 
-difference() {
+module tx_pod() difference() {
     union() {
         cylinder(d = od, h = h);
         translate([od / 2 - wall, -pcb_w / 2 - wall, 0])
@@ -27,3 +27,5 @@ difference() {
     translate([0, 0, h * 0.4]) rotate([0, 90, 0])
         cylinder(d = cable_d, h = od + pcb_l + 10);                  // leads + cable
 }
+
+tx_pod();

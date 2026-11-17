@@ -12,7 +12,7 @@ cable_d   = 5;
 lid_clear = 0.25;
 $fn = 96;
 
-module body() {
+module rx_pod() {
     difference() {
         cylinder(d = pod_d, h = pod_h);
         translate([0, 0, floor_t]) cylinder(d = pod_d - 2 * wall, h = pod_h);
@@ -35,5 +35,5 @@ module lid() {
     }
 }
 
-body();
+rx_pod();
 translate([pod_d + 6, 0, 0]) lid();
