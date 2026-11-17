@@ -24,12 +24,15 @@ class Channel:
     gap_bits: int = 8           # coil off between frames
     seed: int | None = None
 
+    def __post_init__(self):
+        self.rnd = random.Random(self.seed)  # one stream: each pass gets fresh noise
+
     @property
     def sps(self) -> float:
         return self.fs / self.bitrate
 
     def transmit(self, frames: list[bytes], loops: int = 1) -> list[tuple[float, float, float]]:
-        rnd = random.Random(self.seed)
+        rnd = self.rnd
         levels = [0] * 64  # idle lead-in
         for _ in range(loops):
             for f in frames:
