@@ -1,0 +1,32 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e host_cli pytest
+      - run: pytest -q host_cli/test_roundtrip.py
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with: { path: ~/.platformio, key: pio-${{ hashFiles('firmware_*/platformio.ini') }} }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install platformio
+      - run: pio run -d firmware_tx && pio run -d firmware_rx
+
+  hardware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y openscad
+      - run: for f in tx_coil_mount rx_sensor_pod; do openscad -o $f.stl hardware/$f.scad; done
+      - uses: actions/upload-artifact@v4
+        with: { name: stl, path: "*.stl" }
