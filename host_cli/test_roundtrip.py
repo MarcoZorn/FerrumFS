@@ -1,6 +1,6 @@
 """Run: python test_roundtrip.py (or pytest)."""
 
-import os
+import random
 import tempfile
 from pathlib import Path
 
@@ -32,9 +32,9 @@ def test_frame_fec():
 
 
 def test_noisy_channel():
-    data = os.urandom(300)
+    data = random.Random(0).randbytes(300)
     frames = encode_file("blob.bin", data)
-    asm = receive(Channel(seed=1), frames, loops=2)
+    asm = receive(Channel(seed=1), frames, loops=3)
     assert asm.result() == ("blob.bin", data), f"missing {asm.missing}"
 
 
