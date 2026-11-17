@@ -44,7 +44,7 @@ def project(samples: list[tuple[float, ...]], sps: float) -> list[float]:
     return _moving_avg(proj, max(1, int(sps / 4)))
 
 
-def bits_dll(sig: list[float], sps: float) -> str:
+def bits_dll(sig: list[float], sps: float, centers: list[float] | None = None) -> str:
     """Delay-locked Manchester decoder.
 
     Every bit has a mid-bit edge: lock onto it, expect the next one T later
@@ -61,6 +61,8 @@ def bits_dll(sig: list[float], sps: float) -> str:
         late = sum(sig[c:c + h])
         early = sum(sig[max(0, c - h):c])
         out.append("1" if late > early else "0")
+        if centers is not None:  # for plotting the recovered clock
+            centers.append(t)
         lo, hi = bisect_left(edges, t + 0.75 * T), bisect_right(edges, t + 1.25 * T)
         if lo < hi:
             t = min(edges[lo:hi], key=lambda e: abs(e - t - T))
