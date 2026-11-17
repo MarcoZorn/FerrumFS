@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
-        with: { path: ~/.platformio, key: pio-${{ hashFiles('firmware_*/platformio.ini') }} }
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('firmware_*/platformio.ini') }}
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install platformio
